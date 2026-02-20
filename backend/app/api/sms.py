@@ -3,6 +3,7 @@ from fastapi.responses import PlainTextResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.core.database import get_db
+from app.api.deps import get_current_user
 from app.models.models import Router, ScriptExecution
 from app.services.sms import (
     parse_sms_command,
@@ -94,6 +95,7 @@ async def inbound_sms(
 async def broadcast_sms(
     message: str,
     phone_numbers: list[str],
+    user: dict = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """Send an SMS alert to multiple numbers (for offline alerts etc)."""

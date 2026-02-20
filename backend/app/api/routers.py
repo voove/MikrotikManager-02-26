@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.core.database import get_db
+from app.api.deps import get_current_user
 from app.models.models import Router, ScriptExecution
 from app.schemas.schemas import RouterCreate, RouterUpdate, RouterResponse, ExecuteScriptRequest, ExecutionResponse
 from app.scripts.routeros import list_scripts, get_script
@@ -12,13 +13,20 @@ router = APIRouter(prefix="/routers", tags=["routers"])
 
 
 @router.get("/", response_model=list[RouterResponse])
-async def list_routers(db: AsyncSession = Depends(get_db)):
+async def list_routers(
+    user: dict = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
     result = await db.execute(select(Router).order_by(Router.name))
     return result.scalars().all()
 
 
 @router.post("/", response_model=RouterResponse)
-async def create_router(data: RouterCreate, db: AsyncSession = Depends(get_db)):
+async def create_router(
+    data: RouterCreate,
+    user: dict = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
     r = Router(**data.model_dump())
     db.add(r)
     await db.commit()
@@ -27,7 +35,11 @@ async def create_router(data: RouterCreate, db: AsyncSession = Depends(get_db)):
 
 
 @router.get("/{router_id}", response_model=RouterResponse)
-async def get_router(router_id: int, db: AsyncSession = Depends(get_db)):
+async def get_router(
+    router_id: int,
+    user: dict = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
     r = await db.get(Router, router_id)
     if not r:
         raise HTTPException(404, "Router not found")
@@ -35,7 +47,12 @@ async def get_router(router_id: int, db: AsyncSession = Depends(get_db)):
 
 
 @router.patch("/{router_id}", response_model=RouterResponse)
-async def update_router(router_id: int, data: RouterUpdate, db: AsyncSession = Depends(get_db)):
+async def update_router(
+    router_id: int,
+    data: RouterUpdate,
+    user: dict = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
     r = await db.get(Router, router_id)
     if not r:
         raise HTTPException(404, "Router not found")
@@ -47,7 +64,11 @@ async def update_router(router_id: int, data: RouterUpdate, db: AsyncSession = D
 
 
 @router.delete("/{router_id}")
-async def delete_router(router_id: int, db: AsyncSession = Depends(get_db)):
+async def delete_router(
+    router_id: int,
+    user: dict = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
     r = await db.get(Router, router_id)
     if not r:
         raise HTTPException(404, "Router not found")
@@ -57,7 +78,12 @@ async def delete_router(router_id: int, db: AsyncSession = Depends(get_db)):
 
 
 @router.get("/{router_id}/executions", response_model=list[ExecutionResponse])
-async def get_executions(router_id: int, limit: int = 50, db: AsyncSession = Depends(get_db)):
+async def get_executions(
+    router_id: int,
+    limit: int = 50,
+    user: dict = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
     result = await db.execute(
         select(ScriptExecution)
         .where(ScriptExecution.router_id == router_id)
@@ -68,7 +94,12 @@ async def get_executions(router_id: int, limit: int = 50, db: AsyncSession = Dep
 
 
 @router.post("/{router_id}/execute", response_model=ExecutionResponse)
-async def run_script(router_id: int, req: ExecuteScriptRequest, db: AsyncSession = Depends(get_db)):
+async def run_script(
+    router_id: int,
+    req: ExecuteScriptRequest,
+    user: dict = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
     r = await db.get(Router, router_id)
     if not r:
         raise HTTPException(404, "Router not found")
@@ -83,7 +114,7 @@ async def run_script(router_id: int, req: ExecuteScriptRequest, db: AsyncSession
         router_id=router_id,
         script_name=req.script_name,
         triggered_by=req.triggered_by,
-        triggered_by_user=req.triggered_by_user,
+        triggered_by_user=user["email"],
         status="pending",
     )
     db.add(execution)
@@ -97,5 +128,5 @@ async def run_script(router_id: int, req: ExecuteScriptRequest, db: AsyncSession
 
 
 @router.get("/scripts/list")
-async def get_scripts():
+async def get_scripts(user: dict = Depends(get_current_user)):
     return list_scripts()
