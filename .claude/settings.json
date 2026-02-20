@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -m pytest:*)",
+      "Bash(git -C /Users/voovedev/dev/MikrotikManager-02-26 push origin main)"
+    ],
+    "additionalDirectories": [
+      "/Users/voovedev/dev/MikrotikManager-02-26/docs"
+    ]
+  }
+}
