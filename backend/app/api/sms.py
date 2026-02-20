@@ -113,17 +113,12 @@ from app.scripts.routeros import get_script, parse_kv_output
 def execute_script_with_sms_reply(execution_id: int, reply_to: str):
     """Execute script and send result via SMS."""
     import asyncio
-    from sqlalchemy import create_engine
     from sqlalchemy.orm import Session
     from app.models.models import ScriptExecution, Router
+    from app.core.database import get_sync_engine
     from datetime import datetime, timezone
 
-    sync_url = settings.DATABASE_URL.replace("+asyncpg", "")
-    from sqlalchemy import create_engine as sync_engine_create
-    engine = sync_engine_create(sync_url)
-
-    def run_async(coro):
-        return asyncio.get_event_loop().run_until_complete(coro)
+    engine = get_sync_engine()
 
     with Session(engine) as session:
         execution = session.get(ScriptExecution, execution_id)
@@ -133,7 +128,7 @@ def execute_script_with_sms_reply(execution_id: int, reply_to: str):
         execution.status = "running"
         session.commit()
 
-        result = run_async(run_ssh_command(
+        result = asyncio.run(run_ssh_command(
             router.ip_address,
             script["command"],
             port=router.ssh_port,

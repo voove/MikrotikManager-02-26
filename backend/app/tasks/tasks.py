@@ -1,29 +1,26 @@
 import asyncio
 from datetime import datetime, timezone
+from sqlalchemy import select
+from sqlalchemy.orm import Session
+from influxdb_client import Point
 from app.tasks.celery_app import celery_app
 from app.services.ssh import run_ssh_command, test_connectivity
 from app.scripts.routeros import get_script, parse_kv_output
 from app.core.config import settings
+from app.core.database import get_sync_engine
+from app.core.influx import get_write_api
+from app.models.models import Router, ScriptExecution, Alert
 
 
 def run_async(coro):
     """Run an async function from sync Celery task."""
-    return asyncio.get_event_loop().run_until_complete(coro)
+    return asyncio.run(coro)
 
 
 @celery_app.task(name="app.tasks.tasks.heartbeat_all_routers", bind=True)
 def heartbeat_all_routers(self):
     """Poll all active routers and update their online status + metrics."""
-    from sqlalchemy import create_engine, select
-    from sqlalchemy.orm import Session
-    from app.models.models import Router
-    from app.core.influx import get_write_api
-    from influxdb_client import Point
-
-    # Use sync engine for Celery
-    sync_url = settings.DATABASE_URL.replace("+asyncpg", "")
-    from sqlalchemy import create_engine as sync_engine_create
-    engine = sync_engine_create(sync_url)
+    engine = get_sync_engine()
 
     with Session(engine) as session:
         routers = session.execute(select(Router).where(Router.is_active == True)).scalars().all()
@@ -80,15 +77,7 @@ def heartbeat_all_routers(self):
 @celery_app.task(name="app.tasks.tasks.poll_signal_metrics")
 def poll_signal_metrics(router_id: int):
     """Pull LTE signal metrics and store in InfluxDB."""
-    from sqlalchemy import create_engine, select
-    from sqlalchemy.orm import Session
-    from app.models.models import Router
-    from app.core.influx import get_write_api
-    from influxdb_client import Point
-
-    sync_url = settings.DATABASE_URL.replace("+asyncpg", "")
-    from sqlalchemy import create_engine as sync_engine_create
-    engine = sync_engine_create(sync_url)
+    engine = get_sync_engine()
 
     with Session(engine) as session:
         router = session.get(Router, router_id)
@@ -129,14 +118,7 @@ def poll_signal_metrics(router_id: int):
 @celery_app.task(name="app.tasks.tasks.execute_script", bind=True)
 def execute_script(self, execution_id: int):
     """Execute a RouterOS script and save result."""
-    from sqlalchemy import create_engine, select
-    from sqlalchemy.orm import Session
-    from app.models.models import ScriptExecution, Router
-    from datetime import timezone
-
-    sync_url = settings.DATABASE_URL.replace("+asyncpg", "")
-    from sqlalchemy import create_engine as sync_engine_create
-    engine = sync_engine_create(sync_url)
+    engine = get_sync_engine()
 
     with Session(engine) as session:
         execution = session.get(ScriptExecution, execution_id)
@@ -183,7 +165,6 @@ def execute_script(self, execution_id: int):
 
 
 def _create_offline_alert(session, router):
-    from app.models.models import Alert
     alert = Alert(
         router_id=router.id,
         alert_type="offline",
