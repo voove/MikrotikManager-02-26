@@ -36,7 +36,9 @@ def test_malformed_auth_header_raises_401():
     assert exc.value.status_code == 401
 
 
-def test_invalid_token_raises_401():
+@patch("app.api.deps.decode_session_token")
+def test_invalid_token_raises_401(mock_decode):
+    mock_decode.return_value = None
     request = _make_request("Bearer invalid.token.here")
     with pytest.raises(HTTPException) as exc:
         get_current_user(request)
