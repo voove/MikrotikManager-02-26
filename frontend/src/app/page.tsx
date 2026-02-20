@@ -6,6 +6,7 @@ import { Router } from "@/lib/types";
 import RouterCard from "@/components/dashboard/RouterCard";
 import Sidebar from "@/components/ui/Sidebar";
 import StatsBar from "@/components/dashboard/StatsBar";
+import AuthGuard from "@/components/auth/AuthGuard";
 import { RefreshCw, Plus, Wifi, WifiOff } from "lucide-react";
 
 export default function DashboardPage() {
@@ -42,6 +43,7 @@ export default function DashboardPage() {
   const offlineCount = routers.filter((r) => !r.is_online).length;
 
   return (
+    <AuthGuard>
     <div className="flex h-screen bg-background overflow-hidden">
       <Sidebar />
       <div className="flex-1 flex flex-col overflow-hidden">
@@ -122,5 +124,6 @@ export default function DashboardPage() {
         </main>
       </div>
     </div>
+    </AuthGuard>
   );
 }

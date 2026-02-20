@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { api } from "@/lib/api";
 import { Router, SignalMetrics, ScriptExecution, Script } from "@/lib/types";
 import Sidebar from "@/components/ui/Sidebar";
+import AuthGuard from "@/components/auth/AuthGuard";
 import SignalChart from "@/components/router/SignalChart";
 import ScriptRunner from "@/components/router/ScriptRunner";
 import ExecutionLog from "@/components/router/ExecutionLog";
@@ -53,6 +54,7 @@ export default function RouterDetailPage() {
 
   if (!router) {
     return (
+      <AuthGuard>
       <div className="flex h-screen bg-background">
         <Sidebar />
         <div className="flex-1 flex items-center justify-center">
@@ -61,6 +63,7 @@ export default function RouterDetailPage() {
           </p>
         </div>
       </div>
+      </AuthGuard>
     );
   }
 
@@ -69,6 +72,7 @@ export default function RouterDetailPage() {
     : "never";
 
   return (
+    <AuthGuard>
     <div className="flex h-screen bg-background overflow-hidden">
       <Sidebar />
       <div className="flex-1 flex flex-col overflow-hidden">
@@ -185,5 +189,6 @@ export default function RouterDetailPage() {
         </main>
       </div>
     </div>
+    </AuthGuard>
   );
 }
