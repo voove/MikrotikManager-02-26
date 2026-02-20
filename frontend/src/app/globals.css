@@ -1,0 +1,81 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&family=Fira+Code:wght@300;400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #080c10;
+  --surface: #0f1419;
+  --border: #1e2830;
+  --accent: #00d4aa;
+  --accent-glow: rgba(0, 212, 170, 0.15);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  background-color: var(--bg);
+  color: #e2e8f0;
+  font-family: 'DM Sans', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #2d3748; }
+
+/* Grid scan line effect */
+.scanlines::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.05) 2px,
+    rgba(0, 0, 0, 0.05) 4px
+  );
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Glow text */
+.text-glow {
+  text-shadow: 0 0 20px var(--accent);
+}
+
+/* Card hover glow */
+.card-hover {
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.card-hover:hover {
+  border-color: var(--accent);
+  box-shadow: 0 0 20px var(--accent-glow);
+}
+
+/* Status dot */
+@keyframes status-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+.status-online { animation: status-pulse 2s ease-in-out infinite; }
+
+/* Terminal output */
+.terminal {
+  font-family: 'Fira Code', monospace;
+  background: #040608;
+  border: 1px solid #1e2830;
+  border-radius: 6px;
+  padding: 16px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #00d4aa;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
